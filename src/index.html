@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Neural Network GUI</title>
+
+    <link rel="stylesheet" href="/static/css/vendor.css" type="text/css">
+    <link rel="stylesheet" href="/static/css/main.css" type="text/css">
+
+</head>
+
+<body ng-app="app" ng-controller="AppCtrl" ng-keydown="keyDown($event)" ng-keyup="keyUp($event)">
+
+    <div class="wrapper">
+        <!--<header class="header">
+            Neural Network GUI
+            <div class="pull-right">
+                <button>Import</button>
+                <button>Save</button>
+            </div>
+        </header>-->
+        <section class="content">
+            <div class="columns">
+                <main class="main" style="max-height:{{ windowHeight }}px; max-width:{{ contentWidth }}px">
+                    <fc-canvas model="model" selected-objects="flowchartselected" edge-style="curved" callbacks="callbacks" automatic-resize="true"></fc-canvas>
+                </main>
+                <aside class="sidebar-first">
+                    <div class="button-overlay">
+                        <b>Layers</b>
+                        <button ng-click="addNewNode('Convolutional2D')" title="Add a new node to then chart">Add Convolutional</button>
+                        <button ng-click="addNewNode('Dense')" title="Add a new node to then chart">Add Dense</button>
+                        <button ng-click="addNewNode('Dropout')" title="Add a new node to then chart">Add Dropout</button>
+                        <button ng-click="addNewNode('Flatten')" title="Add a new node to then chart">Add Flatten</button>
+                    </div>
+                    <br><br><br>
+                    <div class="button-overlay">
+                        <b>Import / Export</b>
+                        <button ng-click="exportNetwork()" ng-href="{{ url }}" title="Export network">Export network</button>
+                    </div>
+                </aside>
+
+
+
+                <aside class="sidebar-second">
+                    Selected node: <br>
+                    <hr>
+                    <b>name:</b> {{ flowchartselected[0].name }} <br>
+                     ID: {{ flowchartselected[0].id }} <br>
+                     <!---------------------INPUT NODE----------------------------------->
+                    <div ng-show="flowchartselected[0].nodeType=='Input'">
+                      <div class="form-group">
+                          <label for="foldsId">Input dimensions</label>
+                           <select class="form-control" id="foldsId" ng-model="input_dimensions"
+                                    ng-init="input_dimensions='2'" ng-change="updateInput()">
+                             <option value="1">1 Dimension</option>
+                             <option value="2">Image</option>
+                           </select>
+                      </div>
+                      <label>Dimension 1:
+                          <input type="number" name="input" ng-model="input_dimension_1"
+                                  ng-init="input_dimension_1=48" min="1" max="999999" ng-change="updateInput()">
+                      </label>
+                      <label ng-show="input_dimensions == '2'">Dimension 2:
+                          <input type="number" name="input" ng-model="input_dimension_2"
+                                  ng-init="input_dimension_2=48" min="1" max="999999" ng-change="updateInput()">
+                      </label>
+                    </div>
+                    <!---------------------DENSE NODE----------------------------------->
+                    <div ng-show="flowchartselected[0].nodeType=='Dense'">
+                      <label>Number of units:
+                          <input type="number" name="input" ng-model="denseCount[flowchartselected[0].id]"
+                                  ng-init="denseCount[flowchartselected[0].id]=32" min="1" max="999999"
+                                  ng-change="updateDense(flowchartselected[0].id)">
+                      </label>
+                      <div class="form-group">
+                          <label for="foldsId">Activation</label>
+                           <select class="form-control" id="activationId" ng-model="denseActivation[flowchartselected[0].id]"
+                                    ng-init="denseActivation[flowchartselected[0].id]='ReLU'"
+                                    ng-change="updateDense(flowchartselected[0].id)">
+                             <option value="ReLU">ReLU</option>
+                             <option value="tanh">tanh</option>
+                             <option value="softmax">softmax</option>
+
+                           </select>
+                      </div>
+                    </div>
+                    <!---------------------DROPOUT NODE----------------------------------->
+                    <div ng-show="flowchartselected[0].nodeType=='Dropout'">
+                      <div class="form-group">
+                          <label for="inputText3" class="col-sm-2 control-label">p:</label>
+                          <div class="col-sm-10">
+                              <input type="number" class="form-control"
+                                      ng-model="dropoutP[flowchartselected[0].id]"
+                                      ng-pattern="/^[0-9]+(\.[0-9]{1,2})?$/"
+                                      step="0.01"
+                                      ng-change="updateDropout(flowchartselected[0].id)" />
+                          </div>
+                      </div>
+                    </div>
+                    <!---------------------Convolutional2D NODE------------------------------->
+                    <div ng-show="flowchartselected[0].nodeType=='Convolutional2D'">
+                      <label>Number of units:
+                          <input type="number" name="input" ng-model="conv2DCount[flowchartselected[0].id]"
+                                  ng-init="conv2DCount[flowchartselected[0].id]=32" min="1" max="999999"
+                                  ng-change="updateConv2D(flowchartselected[0].id)">
+                      </label>
+
+                      <div class="form-group">
+                          <label for="kernelId">Kernel:</label>
+                           <select class="form-control" id="kernelId" ng-model="conv2DKernel[flowchartselected[0].id]"
+                                    ng-change="updateConv2D(flowchartselected[0].id)">
+                                    <option value="3x3">3x3</option>
+                                    <option value="5x5">5x5</option>
+                                    <option value="7x7">7x7</option>
+                                    <option value="9x9">9x9</option>
+                           </select>
+                      </div>
+
+                      <div class="form-group">
+                          <label for="paddingId">Padding:</label>
+                           <select class="form-control" id="paddingId" ng-model="conv2DPadding[flowchartselected[0].id]"
+                                    ng-change="updateConv2D(flowchartselected[0].id)">
+                                    <option value="same">same</option>
+                                    <option value="valid">valid</option>
+                           </select>
+                      </div>
+
+                      <div class="form-group">
+                          <label for="strideId">Stride:</label>
+                           <select class="form-control" id="strideId" ng-model="conv2DStride[flowchartselected[0].id]"
+                                    ng-change="updateConv2D(flowchartselected[0].id)">
+                                    <option value="1x1">1x1</option>
+                                    <option value="2x2">2x2</option>
+                                    <option value="3x3">3x3</option>
+                                    <option value="4x4">4x4</option>
+                           </select>
+                      </div>
+
+                      <div class="form-group">
+                          <label for="activationId">Activation</label>
+                           <select class="form-control" id="activationId" ng-model="conv2DActivation[flowchartselected[0].id]"
+                                    ng-change="updateConv2D(flowchartselected[0].id)">
+                             <option value="ReLU">ReLU</option>
+                             <option value="tanh">tanh</option>
+                           </select>
+                      </div>
+                    </div>
+
+                </aside>
+
+            </div>
+        </section>
+        <!--<footer class="footer">Footer: Fixed height</footer>
+        <b>connectors:</b> {{ flowchartselected[0].connectors }} <br>
+        <b>Properties:</b> {{ flowchartselected[0].properties }} <br>
+        -->
+    </div>
+
+
+
+    <script src="/static/js/vendor.js"></script>
+    <script src="/static/js/main.js"></script>
+
+</body>
+
+</html>
